@@ -1,0 +1,20 @@
+{
+  "name": "lesson-18-cli-entry",
+  "version": "0.1.0",
+  "private": true,
+  "bin": {
+    "myagent": "./dist/cli.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}

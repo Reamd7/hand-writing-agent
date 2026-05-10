@@ -1,0 +1,18 @@
+{
+  "name": "my-agent-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "check": "npx @biomejs/biome check ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

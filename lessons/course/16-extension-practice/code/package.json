@@ -1,0 +1,23 @@
+{
+  "name": "lesson-16-extension-practice",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "echo 'nothing to clean'",
+    "build": "echo 'nothing to build'",
+    "check": "echo 'nothing to check'"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-agent-core": "workspace:*",
+    "@earendil-works/pi-ai": "workspace:*",
+    "@earendil-works/pi-coding-agent": "workspace:*",
+    "typescript": "^5.8.0"
+  },
+  "pi": {
+    "extensions": [
+      "./src/plan-extension.ts",
+      "./src/security-extension.ts"
+    ]
+  }
+}

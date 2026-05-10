@@ -1,0 +1,19 @@
+{
+  "name": "lesson-03-provider-management",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/demo.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^5.0.0",
+    "@ai-sdk/openai": "^5.0.0",
+    "@ai-sdk/provider": "^2.0.0",
+    "ai": "^5.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

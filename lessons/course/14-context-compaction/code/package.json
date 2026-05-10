@@ -1,0 +1,17 @@
+{
+  "name": "lesson-14-context-compaction",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "npx tsx src/demo.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.0",
+    "ai": "^4.3.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

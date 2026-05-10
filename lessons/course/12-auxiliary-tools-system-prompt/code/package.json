@@ -1,0 +1,19 @@
+{
+  "name": "lesson-12-auxiliary-tools-system-prompt",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "demo": "tsx src/demo.ts"
+  },
+  "dependencies": {
+    "glob": "^11.0.0",
+    "ignore": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
