@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/agent-core" },
+    { "path": "packages/tools" },
+    { "path": "packages/app" }
+  ]
+}

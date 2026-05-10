@@ -1,0 +1,37 @@
+{
+  "name": "my-agent-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "postinstall": "npx only-allow pnpm",
+    "prepare": "husky",
+    "lint": "pnpm -r lint && oxlint .",
+    "fmt": "pnpm -r fmt && oxfmt format .",
+    "fmt:check": "pnpm -r fmt:check && oxfmt check .",
+    "typecheck": "pnpm -r typecheck",
+    "check": "pnpm -r check"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "oxfmt format",
+      "oxlint"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.4",
+  "engines": {
+    "node": ">=26",
+    "pnpm": ">=10"
+  },
+  "devDependencies": {
+    "@typescript/native-preview": "7.0.0-dev.20260509.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
+    "oxfmt": "^0.48.0",
+    "oxlint": "^1.63.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}
