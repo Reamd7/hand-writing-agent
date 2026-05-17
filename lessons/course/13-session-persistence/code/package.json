@@ -1,18 +1,18 @@
 {
-  "name": "lesson-13-session-persistence",
-  "version": "1.0.0",
+  "name": "my-agent-monorepo",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "type": "module",
   "scripts": {
-    "demo": "npx tsx src/demo.ts"
-  },
-  "dependencies": {
-    "uuid": "^11.1.0"
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "check": "npx @biomejs/biome check ."
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/uuid": "^10.0.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "@biomejs/biome": "^2.4.15",
+    "@types/node": "^25.8.0",
+    "typescript": "^6.0.3"
   }
 }

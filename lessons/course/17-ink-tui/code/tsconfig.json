@@ -1,15 +1,8 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
-    "jsx": "react-jsx",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "declaration": true
-  },
-  "include": ["src"]
+  "files": [],
+  "references": [
+    { "path": "packages/agent-core" },
+    { "path": "packages/tools" },
+    { "path": "packages/app" }
+  ]
 }

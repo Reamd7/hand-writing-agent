@@ -26,7 +26,7 @@ function printSeparator(title: string): void {
   console.log(`${"=".repeat(60)}\n`);
 }
 
-function printResult(result: AgentToolResult): void {
+function printResult(result: AgentToolResult<any>): void {
   for (const block of result.content) {
     if (block.type === "text") {
       console.log(block.text);

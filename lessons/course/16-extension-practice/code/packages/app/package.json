@@ -1,0 +1,41 @@
+{
+  "name": "@my-agent/app",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo:stream": "tsx src/demos/stream-demo.ts",
+    "demo:event-mapper": "tsx src/demos/event-mapper.ts",
+    "demo:provider": "tsx src/demos/provider-demo.ts",
+    "demo:agent-loop": "tsx src/demos/agent-loop-demo.ts",
+    "demo:tool-execution": "tsx src/demos/tool-execution-demo.ts",
+    "demo:steering": "tsx src/demos/steering-demo.ts",
+    "demo:read-tool": "tsx src/demos/read-tool-demo.ts",
+    "demo:bash-tool": "tsx src/demos/bash-tool-demo.ts",
+    "demo:edit-write": "tsx src/demos/edit-write-demo.ts",
+    "demo:tools-system-prompt": "tsx src/demos/tools-system-prompt-demo.ts",
+    "demo:session": "tsx src/demos/session-demo.ts",
+    "demo:compaction": "tsx src/demos/compaction-demo.ts",
+    "demo:extension": "tsx src/demos/extension-demo.ts",
+    "demo:extension-practice": "tsx src/demos/extension-practice-demo.ts"
+  },
+  "dependencies": {
+    "@my-agent/core": "workspace:*",
+    "@my-agent/tools": "workspace:*",
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@ai-sdk/openai": "^3.0.0",
+    "ai": "^6.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.0"
+  }
+}

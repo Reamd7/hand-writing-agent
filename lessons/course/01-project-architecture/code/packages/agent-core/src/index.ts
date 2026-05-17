@@ -1,39 +1,10 @@
-// Agent core: message types and agent loop interface
+// @my-agent/core — Agent 核心运行时
+//
+// 后续课程将在此包中逐步实现：
+//   - Lesson 04: Agent 状态与事件模型
+//   - Lesson 05: Agent Loop 流式响应
+//   - Lesson 06: Tool 调用执行引擎
+//   - Lesson 07: Steering 与 Follow-up 队列
+//   - Lesson 08: 测试基础设施
 
-/** A single message in a conversation. */
-export interface Message {
-  role: "user" | "assistant" | "system";
-  content: string;
-}
-
-/** Definition of a tool that the agent can invoke. */
-export interface ToolDefinition {
-  name: string;
-  description: string;
-  parameters: Record<string, unknown>;
-}
-
-/** The result returned after a tool execution. */
-export interface ToolResult {
-  toolName: string;
-  result: string;
-}
-
-/** Configuration for an agent instance. */
-export interface AgentConfig {
-  model: string;
-  systemPrompt: string;
-  tools: ToolDefinition[];
-  maxTurns: number;
-}
-
-/** Create an AgentConfig with sensible defaults, overridable via partial input. */
-export function createAgentConfig(overrides: Partial<AgentConfig> = {}): AgentConfig {
-  return {
-    model: "default",
-    systemPrompt: "You are a helpful assistant.",
-    tools: [],
-    maxTurns: 10,
-    ...overrides,
-  };
-}
+export {};

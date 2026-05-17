@@ -1,18 +1,18 @@
 {
-  "name": "lesson-09-tool-definition-read",
-  "version": "1.0.0",
+  "name": "my-agent-monorepo",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "type": "module",
   "scripts": {
-    "demo": "tsx src/demo.ts"
-  },
-  "dependencies": {
-    "file-type": "^19.6.0",
-    "zod": "^3.24.0"
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "check": "npx @biomejs/biome check ."
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "@biomejs/biome": "^2.4.15",
+    "@types/node": "^25.8.0",
+    "typescript": "^6.0.3"
   }
 }

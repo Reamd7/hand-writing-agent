@@ -1,0 +1,30 @@
+{
+  "name": "@my-agent/app",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo:stream": "tsx src/demos/stream-demo.ts",
+    "demo:event-mapper": "tsx src/demos/event-mapper.ts",
+    "demo:provider": "tsx src/demos/provider-demo.ts"
+  },
+  "dependencies": {
+    "@my-agent/core": "workspace:*",
+    "@my-agent/tools": "workspace:*",
+    "@ai-sdk/anthropic": "^3.0.0",
+    "@ai-sdk/openai": "^3.0.0",
+    "ai": "^6.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.0"
+  }
+}

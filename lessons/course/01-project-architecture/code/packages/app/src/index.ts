@@ -1,34 +1,9 @@
-// Application entry point: bootstrap tools and run a demo agent loop
+// @my-agent/app — CLI 与 UI 应用层
+//
+// 后续课程将在此包中逐步实现：
+//   - Lesson 02-03: AI SDK 探索 demos
+//   - Lesson 17: ink TUI
+//   - Lesson 18: CLI 入口与运行模式
+//   - Lesson 19: 生产化打磨
 
-import { createAgentConfig } from "@my-agent/core";
-import { executeTool, listTools, registerTool } from "@my-agent/tools";
-
-// Register a demo tool
-registerTool(
-  {
-    name: "greet",
-    description: "Returns a greeting message",
-    parameters: { name: { type: "string" } },
-  },
-  async (args) => `Hello, ${String(args.name ?? "world")}!`,
-);
-
-// Create agent configuration
-const config = createAgentConfig({
-  model: "gpt-4",
-  systemPrompt: "You are a coding assistant.",
-  tools: [
-    {
-      name: "greet",
-      description: "Returns a greeting message",
-      parameters: { name: { type: "string" } },
-    },
-  ],
-});
-
-console.log("Agent config:", config);
-console.log("Registered tools:", listTools());
-
-// Execute the demo tool
-const result = await executeTool("greet", { name: "Student" });
-console.log("Tool result:", result);
+export {};

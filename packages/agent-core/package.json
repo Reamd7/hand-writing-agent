@@ -1,6 +1,7 @@
 {
   "name": "@my-agent/core",
   "version": "0.0.0",
+  "type": "module",
   "description": "",
   "keywords": [],
   "license": "ISC",
@@ -39,5 +40,14 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@10.33.4"
+  "packageManager": "pnpm@10.33.4",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.76",
+    "@ai-sdk/google": "^3.0.71",
+    "@ai-sdk/openai": "^3.0.63",
+    "@ai-sdk/openai-compatible": "^2.0.47",
+    "ai": "^6.0.177",
+    "zod": "^4.4.3",
+    "effect": "^3.21.2"
+  }
 }

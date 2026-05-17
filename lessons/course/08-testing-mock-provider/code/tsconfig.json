@@ -1,17 +1,8 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "declaration": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "types": ["vitest/globals"]
-  },
-  "include": ["src"]
+  "files": [],
+  "references": [
+    { "path": "packages/agent-core" },
+    { "path": "packages/tools" },
+    { "path": "packages/app" }
+  ]
 }
