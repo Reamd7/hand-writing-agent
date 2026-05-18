@@ -50,6 +50,9 @@ importers:
       '@ai-sdk/openai-compatible':
         specifier: ^2.0.47
         version: 2.0.47(zod@4.4.3)
+      '@ai-sdk/provider':
+        specifier: ^3.0.10
+        version: 3.0.10
       ai:
         specifier: ^6.0.177
         version: 6.0.177(zod@4.4.3)

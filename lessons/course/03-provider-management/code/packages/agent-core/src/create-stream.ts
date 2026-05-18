@@ -1,15 +1,14 @@
 /**
  * Lesson 3: Unified createStream Entry Point
  *
- * A single function that:
- * 1. Resolves a model from the registry by key
- * 2. Transforms messages for cross-provider compatibility
- * 3. Applies middleware (logging, etc.)
- * 4. Calls streamText and returns the result
+ * 统一 streaming 入口函数：
+ * 1. 从 ProviderRegistry 按 key 解析模型（懒加载 SDK）
+ * 2. 跨 provider 消息兼容性转换
+ * 3. 应用中间件（logging 等）
+ * 4. 调用 streamText 返回结果
  *
- * This mirrors the pattern used in pi's agent loop where
- * getApiProvider(model.api).stream(model, context, options) is the
- * central dispatch point.
+ * 消息转换逻辑保留自 Lesson 3 原版（pi 的 transformMessages 简化版）。
+ * OpenCode 在 provider/transform.ts 做更全面的处理。
  */
 
 import { streamText, wrapLanguageModel } from "ai";
@@ -17,15 +16,24 @@ import type {
   LanguageModelV3 as LanguageModel,
   LanguageModelV3Middleware as LanguageModelMiddleware,
 } from "@ai-sdk/provider";
-import type { ModelRegistry } from "./model-registry.js";
+import type { ProviderRegistry } from "./provider/registry.js";
 import { createLoggingMiddleware } from "./middleware.js";
 
 // ---------------------------------------------------------------------------
-// Message types (from pi-ai, with lesson-specific additions)
+// Message types
 // ---------------------------------------------------------------------------
 
-import type { TextContent, ThinkingContent } from "@earendil-works/pi-ai";
-export type { TextContent, ThinkingContent };
+export interface TextContent {
+  type: "text";
+  text: string;
+}
+
+export interface ThinkingContent {
+  type: "thinking";
+  thinking: string;
+  thinkingSignature?: string;
+  redacted?: boolean;
+}
 
 export interface ToolCallContent {
   type: "toolCall";
@@ -46,78 +54,63 @@ export interface UserMessage {
   content: string;
 }
 
-export type Message = AssistantMessageRecord | UserMessage;
+export type StreamMessage = AssistantMessageRecord | UserMessage;
 
 // ---------------------------------------------------------------------------
 // Cross-provider message transformation
 // ---------------------------------------------------------------------------
 
 /**
- * Transform conversation history for compatibility with the target model.
+ * 为目标模型转换对话历史的兼容性。
  *
- * This is a simplified version of pi's transformMessages() from
- * packages/ai/src/providers/transform-messages.ts. The real implementation
- * also handles:
- * - Tool call ID normalization (OpenAI 450+ chars vs Anthropic 64 char limit)
- * - Synthetic tool result insertion for orphaned tool calls
- * - Image content downgrade for non-vision models
- * - Error/aborted assistant message filtering
+ * 处理：
+ * - 跨模型场景的 thinking block 降级
+ * - Redacted / signed thinking 验证
+ *
+ * OpenCode 在 provider/transform.ts 做更全面的版本
+ * （Anthropic 空内容、tool-call ID 清理、reasoning parts 等），
+ * 后续课程会扩展。
  */
 function transformMessages(
-  messages: Message[],
+  messages: StreamMessage[],
   targetProvider: string,
   targetModelId: string,
-): Message[] {
+): StreamMessage[] {
   return messages.map((msg) => {
     if (msg.role !== "assistant") return msg;
 
-    const isSameModel = msg.provider === targetProvider && msg.model === targetModelId;
+    const isSameModel =
+      msg.provider === targetProvider && msg.model === targetModelId;
 
-    const transformedContent = msg.content.flatMap((block): (TextContent | ThinkingContent | ToolCallContent)[] => {
-      if (block.type === "thinking") {
-        // Redacted/encrypted thinking is only valid for the same model
-        if (block.redacted) {
-          return isSameModel ? [block] : [];
+    const transformedContent = msg.content.flatMap(
+      (block): (TextContent | ThinkingContent | ToolCallContent)[] => {
+        if (block.type === "thinking") {
+          if (block.redacted) return isSameModel ? [block] : [];
+          if (isSameModel && block.thinkingSignature) return [block];
+          if (!block.thinking?.trim()) return [];
+          if (isSameModel) return [block];
+          // 跨模型：降级为纯文本
+          return [{ type: "text" as const, text: block.thinking }];
         }
-
-        // Same model with signature: keep for replay
-        if (isSameModel && block.thinkingSignature) {
-          return [block];
-        }
-
-        // Empty thinking: drop
-        if (!block.thinking?.trim()) {
-          return [];
-        }
-
-        // Same model: keep as-is
-        if (isSameModel) return [block];
-
-        // Cross-model: downgrade to plain text so the reasoning
-        // context is preserved but provider-specific metadata is stripped
-        return [{ type: "text" as const, text: block.thinking } as TextContent];
-      }
-
-      return [block];
-    });
+        return [block];
+      },
+    );
 
     return { ...msg, content: transformedContent };
   });
 }
 
 /**
- * Convert our Message[] to the format expected by AI SDK's streamText.
+ * 将 StreamMessage[] 转换为 AI SDK streamText 期望的格式。
  */
-function toSdkMessages(messages: Message[]): Array<{
-  role: "user" | "assistant";
-  content: string;
-}> {
+function toSdkMessages(
+  messages: StreamMessage[],
+): Array<{ role: "user" | "assistant"; content: string }> {
   return messages.map((msg) => {
     if (msg.role === "user") {
       return { role: "user" as const, content: msg.content };
     }
 
-    // For assistant messages, concatenate text content
     const text = msg.content
       .filter((b): b is TextContent => b.type === "text")
       .map((b) => b.text)
@@ -132,28 +125,30 @@ function toSdkMessages(messages: Message[]): Array<{
 // ---------------------------------------------------------------------------
 
 export interface CreateStreamOptions {
-  /** Model key in "provider/modelId" format */
+  /** "provider/modelId" 格式的模型键 */
   modelKey: string;
-  /** Conversation history */
-  messages: Message[];
-  /** System prompt */
+  /** 对话历史 */
+  messages: StreamMessage[];
+  /** 系统提示词 */
   system?: string;
-  /** Additional middleware to apply on top of defaults */
+  /** 在默认中间件之上附加的中间件 */
   middleware?: LanguageModelMiddleware[];
-  /** Abort signal for cancellation */
+  /** 取消信号 */
   abortSignal?: AbortSignal;
-  /** Provider-specific options (e.g. Anthropic thinking config) */
+  /** Provider 特有选项（如 Anthropic thinking 配置） */
   providerOptions?: Record<string, Record<string, unknown>>;
 }
 
 /**
- * Unified streaming entry point.
+ * 统一 streaming 入口。
  *
- * Resolves the model from the registry, transforms messages for
- * cross-provider compatibility, applies middleware, and returns
- * an AI SDK streamText result.
+ * 与 Lesson 3 原版的关键区别：使用 ProviderRegistry 做异步模型解析
+ * （懒加载 SDK），所以这个函数现在是 async 的。
  */
-export function createStream(registry: ModelRegistry, options: CreateStreamOptions): ReturnType<typeof streamText> {
+export async function createStream(
+  registry: ProviderRegistry,
+  options: CreateStreamOptions,
+): Promise<ReturnType<typeof streamText>> {
   const {
     modelKey,
     messages,
@@ -163,29 +158,41 @@ export function createStream(registry: ModelRegistry, options: CreateStreamOptio
     providerOptions,
   } = options;
 
-  // 1. Resolve model from registry
-  const entry = registry.getOrThrow(modelKey);
+  // 1. 从 registry 解析模型（async — 触发懒加载 SDK）
+  const languageModel = await registry.getLanguageModel(modelKey);
 
-  // 2. Transform messages for cross-provider compatibility
-  const transformed = transformMessages(messages, entry.provider, entry.modelId);
+  // 2. 获取 provider/model 信息用于消息转换
+  const { provider, model } = registry.getModel(modelKey);
 
-  // 3. Convert to SDK message format
+  // 3. 跨 provider 消息兼容性转换
+  const transformed = transformMessages(messages, provider.id, model.id);
+
+  // 4. 转换为 SDK 消息格式
   const sdkMessages = toSdkMessages(transformed);
 
-  // 4. Apply middleware: default logging + any extras
-  const allMiddleware: LanguageModelMiddleware[] = [createLoggingMiddleware(), ...extraMiddleware];
+  // 5. 应用中间件：默认 logging + 额外中间件
+  const allMiddleware: LanguageModelMiddleware[] = [
+    createLoggingMiddleware(),
+    ...extraMiddleware,
+  ];
 
   const wrappedModel: LanguageModel = wrapLanguageModel({
-    model: entry.model,
+    model: languageModel,
     middleware: allMiddleware,
   });
 
-  // 5. Call streamText
+  // 6. 合并 model 级别选项与调用者选项
+  const mergedProviderOptions = {
+    ...model.options,
+    ...providerOptions,
+  };
+
+  // 7. 调用 streamText
   return streamText({
     model: wrappedModel,
     messages: sdkMessages,
     system,
     abortSignal,
-    providerOptions: providerOptions as any,
+    providerOptions: mergedProviderOptions as any,
   });
 }

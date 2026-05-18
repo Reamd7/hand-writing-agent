@@ -1,58 +1,96 @@
 /**
- * Lesson 3 Demo: Switching Between OpenAI and Anthropic
+ * Lesson 3 Demo: OpenCode 风格 Provider 管理
  *
- * This demo shows:
- * 1. Registering multiple providers in a ModelRegistry
- * 2. Starting a conversation with one model
- * 3. Switching to another model mid-conversation
- * 4. Cross-provider message transformation in action
+ * 演示：
+ * 1. ProviderRegistry 自动从环境变量发现 provider
+ * 2. 通过配置添加自定义 provider
+ * 3. 中途切换模型的对话
+ * 4. 跨 provider 消息转换
  *
- * To run:
+ * 运行：
  *   export OPENAI_API_KEY=sk-...
  *   export ANTHROPIC_API_KEY=sk-ant-...
- *   npx tsx src/demo.ts
+ *   npx tsx src/demos/provider-demo.ts
  */
 
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { ModelRegistry, createStream } from "@my-agent/core";
-import type { AssistantMessageRecord, StreamMessage as Message } from "@my-agent/core";
+import {
+  ProviderRegistry,
+  createStream,
+  ProviderIDs,
+} from "@my-agent/core";
+import type { AssistantMessageRecord, StreamMessage } from "@my-agent/core";
 
 // ---------------------------------------------------------------------------
-// 1. Set up the registry
+// 1. 创建 registry（自动发现）
 // ---------------------------------------------------------------------------
 
-const registry = new ModelRegistry();
+// OpenCode 风格：ProviderRegistry.create() 会：
+//   1. 加载内置目录（Anthropic, OpenAI, Google 的模型元数据）
+//   2. 扫描环境变量自动检测可用 provider
+// 不再需要手动 import SDK 包和 registry.register()！
+const registry = ProviderRegistry.create();
 
-registry.register("openai", "gpt-4o", openai("gpt-4o"), {
-  contextWindow: 128000,
-  supportsImages: true,
-  costPerMillionInputTokens: 2.5,
-  costPerMillionOutputTokens: 10,
-});
+// 查看发现结果
+console.log("=== Provider Discovery ===");
+for (const p of registry.list()) {
+  const status = p.key ? "✓ available" : "✗ no API key";
+  const models = Object.keys(p.models).join(", ");
+  console.log(`  ${p.name} (${p.id}): ${status}`);
+  console.log(`    models: ${models}`);
+}
+console.log();
 
-registry.register("anthropic", "claude-sonnet-4-5", anthropic("claude-sonnet-4-5"), {
-  contextWindow: 200000,
-  supportsImages: true,
-  supportsThinking: true,
-  costPerMillionInputTokens: 3,
-  costPerMillionOutputTokens: 15,
-});
+// 也可以通过配置添加自定义 provider：
+// const registry = ProviderRegistry.create({
+//   deepseek: {
+//     name: "DeepSeek",
+//     baseURL: "https://api.deepseek.com/v1",
+//     apiKey: process.env.DEEPSEEK_API_KEY,
+//     npm: "@ai-sdk/openai-compatible",
+//     models: {
+//       "deepseek-chat": { name: "DeepSeek Chat" },
+//     },
+//   },
+// });
 
-console.log("Registered models:", registry.listKeys());
+// ---------------------------------------------------------------------------
+// 2. 查看模型元数据
+// ---------------------------------------------------------------------------
+
+console.log("=== Model Metadata ===");
+const available = registry.listAvailable();
+for (const p of available) {
+  for (const model of Object.values(p.models)) {
+    console.log(`  ${p.id}/${model.id}:`);
+    console.log(`    name: ${model.name}`);
+    console.log(`    context: ${model.limit.context.toLocaleString()} tokens`);
+    console.log(`    cost: $${model.cost.input}/M input, $${model.cost.output}/M output`);
+    console.log(`    capabilities: reasoning=${model.capabilities.reasoning}, images=${model.capabilities.images}`);
+  }
+}
+console.log();
+
+// 获取最便宜的模型
+for (const p of available) {
+  const small = registry.getSmallModel(p.id);
+  if (small) {
+    console.log(`  Cheapest model for ${p.id}: ${small.id} ($${small.cost.input}/M input)`);
+  }
+}
 console.log();
 
 // ---------------------------------------------------------------------------
-// 2. Helper to stream a response and collect it
+// 3. Helper：流式对话
 // ---------------------------------------------------------------------------
 
 async function chat(
   modelKey: string,
-  messages: Message[],
-): Promise<{ text: string; messages: Message[] }> {
+  messages: StreamMessage[],
+): Promise<{ text: string; messages: StreamMessage[] }> {
   console.log(`--- Using ${modelKey} ---`);
 
-  const result = createStream(registry, {
+  // createStream 现在是 async（因为首次调用需要懒加载 SDK）
+  const result = await createStream(registry, {
     modelKey,
     messages,
     system: "You are a helpful assistant. Keep responses brief (1-2 sentences).",
@@ -65,12 +103,12 @@ async function chat(
   }
   console.log("\n");
 
-  // Build the assistant message record (tracks which model produced it)
+  // 构建 assistant message（记录是哪个模型生成的）
   const [provider, modelId] = modelKey.split("/");
   const assistantMsg: AssistantMessageRecord = {
     role: "assistant",
-    provider,
-    model: modelId,
+    provider: provider!,
+    model: modelId!,
     content: [{ type: "text", text: fullText }],
   };
 
@@ -81,45 +119,61 @@ async function chat(
 }
 
 // ---------------------------------------------------------------------------
-// 3. Run the demo
+// 4. 运行 demo
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const conversation: Message[] = [];
+  // 检查是否有可用的 provider
+  if (available.length === 0) {
+    console.error("No providers available. Set OPENAI_API_KEY or ANTHROPIC_API_KEY.");
+    process.exit(1);
+  }
 
-  // Turn 1: Ask OpenAI
-  const userMsg1: Message = {
+  // 确定使用哪些模型
+  const hasOpenAI = registry.getProvider(ProviderIDs.openai)?.key;
+  const hasAnthropic = registry.getProvider(ProviderIDs.anthropic)?.key;
+
+  const model1 = hasOpenAI
+    ? "openai/gpt-4o"
+    : "anthropic/claude-sonnet-4-5";
+  const model2 = hasAnthropic
+    ? "anthropic/claude-sonnet-4-5"
+    : "openai/gpt-4o";
+
+  console.log(`=== Running conversation: ${model1} → ${model2} → ${model1} ===\n`);
+
+  const conversation: StreamMessage[] = [];
+
+  // Turn 1
+  const userMsg1: StreamMessage = {
     role: "user",
     content: "What is the capital of France? Reply in one sentence.",
   };
   conversation.push(userMsg1);
+  const result1 = await chat(model1, conversation);
 
-  const result1 = await chat("openai/gpt-4o", conversation);
-
-  // Turn 2: Switch to Anthropic, continuing the same conversation
-  // The transformMessages function will handle any cross-provider
-  // compatibility issues (thinking blocks, tool call IDs, etc.)
-  const userMsg2: Message = {
+  // Turn 2: 切换 provider，继续同一对话
+  // transformMessages 会处理跨 provider 兼容性
+  const userMsg2: StreamMessage = {
     role: "user",
     content: "What is one famous landmark there? Reply in one sentence.",
   };
-  const messagesForTurn2 = [...result1.messages, userMsg2];
+  const result2 = await chat(model2, [...result1.messages, userMsg2]);
 
-  const result2 = await chat("anthropic/claude-sonnet-4-5", messagesForTurn2);
-
-  // Turn 3: Switch back to OpenAI
-  const userMsg3: Message = {
+  // Turn 3: 切换回来
+  const userMsg3: StreamMessage = {
     role: "user",
     content: "When was it built? Reply in one sentence.",
   };
-  const messagesForTurn3 = [...result2.messages, userMsg3];
+  await chat(model1, [...result2.messages, userMsg3]);
 
-  await chat("openai/gpt-4o", messagesForTurn3);
-
-  // Show registry info
-  console.log("=== Registry State ===");
-  for (const entry of registry.listAll()) {
-    console.log(`  ${entry.provider}/${entry.modelId}`, entry.meta ?? "");
+  // 展示 registry 状态
+  console.log("=== Final Registry State ===");
+  for (const p of registry.listAvailable()) {
+    const modelNames = Object.values(p.models)
+      .map((m) => `${m.id} (${m.name})`)
+      .join(", ");
+    console.log(`  ${p.id}: ${modelNames}`);
   }
 }
 

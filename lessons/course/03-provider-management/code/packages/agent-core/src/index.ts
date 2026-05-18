@@ -1,7 +1,7 @@
 // @my-agent/core — Agent 核心运行时
 //
 // Lesson 02: 核心类型 re-export
-// Lesson 03: ModelRegistry + middleware + createStream
+// Lesson 03: Provider 管理（OpenCode 风格）
 
 // ---------------------------------------------------------------------------
 // LLM 层类型（from pi-ai）
@@ -35,14 +35,49 @@ export type {
 } from "@earendil-works/pi-agent-core";
 
 // ---------------------------------------------------------------------------
-// Lesson 03: Provider 管理
+// Lesson 03: Provider 管理（OpenCode 风格）
 // ---------------------------------------------------------------------------
-export { ModelRegistry } from "./model-registry.js";
-export type { ModelEntry, ModelMeta } from "./model-registry.js";
+
+// Provider system
+export {
+  type ProviderID,
+  type ModelID,
+  type ProviderInfo,
+  type ModelInfo,
+  type ModelCapabilities,
+  type ModelCost,
+  type ModelLimits,
+  type ModelStatus,
+  type ProviderApiInfo,
+  type ProviderSource,
+  type ProviderConfig,
+  type ProviderSDK,
+  providerID,
+  modelID,
+  ProviderIDs,
+  CATALOG,
+  resolveSDK,
+  getLanguageModel,
+  clearSDKCache,
+  ProviderRegistry,
+  parseModelKey,
+  ProviderNotFoundError,
+  ModelNotFoundError,
+} from "./provider/index.js";
+
+// Middleware
 export { createLoggingMiddleware } from "./middleware.js";
+export { createCachingMiddleware } from "./middleware.js";
+export { createGuardrailMiddleware, applyMiddleware } from "./middleware.js";
+
+// Stream
 export { createStream } from "./create-stream.js";
 export type {
   CreateStreamOptions,
+  StreamMessage,
   AssistantMessageRecord,
-  Message as StreamMessage,
+  UserMessage as StreamUserMessage,
+  TextContent as StreamTextContent,
+  ThinkingContent as StreamThinkingContent,
+  ToolCallContent,
 } from "./create-stream.js";
